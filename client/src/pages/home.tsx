@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
-type Player = 'red' | 'orange';
+type Player = 'black' | 'white';
 type GameBoard = (Player | null)[];
 type GameStatus = 'playing' | 'win' | 'draw';
 type GameMode = 'human' | 'ai';
@@ -17,7 +17,7 @@ const WINNING_CONDITIONS = [
 
 export default function Home() {
   const [gameBoard, setGameBoard] = useState<GameBoard>(Array(9).fill(null));
-  const [currentPlayer, setCurrentPlayer] = useState<Player>('red');
+  const [currentPlayer, setCurrentPlayer] = useState<Player>('black');
   const [gameStatus, setGameStatus] = useState<GameStatus>('playing');
   const [winner, setWinner] = useState<Player | null>(null);
   const [showModal, setShowModal] = useState(false);
@@ -42,15 +42,15 @@ export default function Home() {
   const evaluateBoard = (board: GameBoard, depth: number, isMaximizing: boolean): number => {
     const gameWinner = checkWinner(board);
     
-    if (gameWinner === 'orange') return 10 - depth; // AI wins
-    if (gameWinner === 'red') return depth - 10; // Human wins
+    if (gameWinner === 'white') return 10 - depth; // AI wins
+    if (gameWinner === 'black') return depth - 10; // Human wins
     if (checkDraw(board)) return 0; // Draw
     
     if (isMaximizing) {
       let bestScore = -Infinity;
       for (let i = 0; i < 9; i++) {
         if (board[i] === null) {
-          board[i] = 'orange';
+          board[i] = 'white';
           const score = evaluateBoard(board, depth + 1, false);
           board[i] = null;
           bestScore = Math.max(score, bestScore);
@@ -61,7 +61,7 @@ export default function Home() {
       let bestScore = Infinity;
       for (let i = 0; i < 9; i++) {
         if (board[i] === null) {
-          board[i] = 'red';
+          board[i] = 'black';
           const score = evaluateBoard(board, depth + 1, true);
           board[i] = null;
           bestScore = Math.min(score, bestScore);
@@ -77,7 +77,7 @@ export default function Home() {
     
     for (let i = 0; i < 9; i++) {
       if (board[i] === null) {
-        board[i] = 'orange';
+        board[i] = 'white';
         const score = evaluateBoard(board, 0, false);
         board[i] = null;
         
@@ -97,7 +97,7 @@ export default function Home() {
     setTimeout(() => {
       const aiMove = getBestMove([...board]);
       const newBoard = [...board];
-      newBoard[aiMove] = 'orange';
+      newBoard[aiMove] = 'white';
       setGameBoard(newBoard);
       
       const gameWinner = checkWinner(newBoard);
@@ -116,7 +116,7 @@ export default function Home() {
         return;
       }
 
-      setCurrentPlayer('red');
+      setCurrentPlayer('black');
       setIsAiThinking(false);
     }, 800); // Add delay to make AI move feel more natural
   };
@@ -128,7 +128,7 @@ export default function Home() {
 
     // Human player's move
     const newBoard = [...gameBoard];
-    newBoard[index] = 'red';
+    newBoard[index] = 'black';
     setGameBoard(newBoard);
 
     const gameWinner = checkWinner(newBoard);
@@ -146,16 +146,16 @@ export default function Home() {
     }
 
     if (gameMode === 'ai') {
-      setCurrentPlayer('orange');
+      setCurrentPlayer('white');
       makeAiMove(newBoard);
     } else {
-      setCurrentPlayer(currentPlayer === 'red' ? 'orange' : 'red');
+      setCurrentPlayer(currentPlayer === 'black' ? 'white' : 'black');
     }
   };
 
   const resetGame = () => {
     setGameBoard(Array(9).fill(null));
-    setCurrentPlayer('red');
+    setCurrentPlayer('black');
     setGameStatus('playing');
     setWinner(null);
     setShowModal(false);
@@ -165,9 +165,9 @@ export default function Home() {
   const getStatusText = () => {
     if (gameStatus === 'win') {
       if (gameMode === 'ai') {
-        return winner === 'red' ? 'Du vant!' : 'Maskinen vant!';
+        return winner === 'black' ? 'Du vant!' : 'Maskinen vant!';
       }
-      return `${winner === 'red' ? 'Rød' : 'Orange'} spiller vant!`;
+      return `${winner === 'black' ? 'Svart' : 'Hvit'} spiller vant!`;
     }
     if (gameStatus === 'draw') {
       return 'Det ble uavgjort!';
@@ -177,16 +177,16 @@ export default function Home() {
       if (isAiThinking) {
         return 'Maskinen tenker...';
       }
-      return currentPlayer === 'red' ? 'Din tur' : 'Maskinens tur';
+      return currentPlayer === 'black' ? 'Din tur' : 'Maskinens tur';
     }
     
-    return `${currentPlayer === 'red' ? 'Rød' : 'Orange'} spiller sin tur`;
+    return `${currentPlayer === 'black' ? 'Svart' : 'Hvit'} spiller sin tur`;
   };
 
   const renderMarker = (player: Player) => (
     <div 
       className={`w-8 h-8 rounded-full shadow-lg ${
-        player === 'red' ? 'game-red' : 'game-orange'
+        player === 'black' ? 'game-black' : 'game-white'
       }`}
     />
   );
@@ -224,7 +224,7 @@ export default function Home() {
             {!isAiThinking && (
               <span 
                 className={`inline-block w-6 h-6 rounded-full mr-2 ${
-                  currentPlayer === 'red' ? 'game-red' : 'game-orange'
+                  currentPlayer === 'black' ? 'game-black' : 'game-white'
                 }`}
               />
             )}
@@ -258,13 +258,13 @@ export default function Home() {
           {/* Player Legend */}
           <div className="flex justify-center space-x-6 text-sm">
             <div className="flex items-center">
-              <div className="w-4 h-4 rounded-full game-red mr-2" />
+              <div className="w-4 h-4 rounded-full game-black mr-2" />
               <span className="text-gray-600">
                 {gameMode === 'ai' ? 'Du' : 'Spiller 1'}
               </span>
             </div>
             <div className="flex items-center">
-              <div className="w-4 h-4 rounded-full game-orange mr-2" />
+              <div className="w-4 h-4 rounded-full game-white mr-2" />
               <span className="text-gray-600">
                 {gameMode === 'ai' ? 'Maskin' : 'Spiller 2'}
               </span>
@@ -281,7 +281,7 @@ export default function Home() {
               <div 
                 className={`w-16 h-16 rounded-full ${
                   gameStatus === 'win' 
-                    ? winner === 'red' ? 'game-red' : 'game-orange'
+                    ? winner === 'black' ? 'game-black' : 'game-white'
                     : 'bg-gray-400'
                 }`}
               />
@@ -294,8 +294,8 @@ export default function Home() {
             {gameStatus === 'draw' 
               ? 'Det ble uavgjort!' 
               : gameMode === 'ai'
-                ? (winner === 'red' ? 'Du vant!' : 'Maskinen vant!')
-                : `${winner === 'red' ? 'Rød' : 'Orange'} spiller vant!`
+                ? (winner === 'black' ? 'Du vant!' : 'Maskinen vant!')
+                : `${winner === 'black' ? 'Svart' : 'Hvit'} spiller vant!`
             }
           </p>
           <Button

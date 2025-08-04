@@ -23,8 +23,8 @@
   --destructive-foreground: hsl(60, 9.1%, 97.8%);
   --ring: hsl(20, 14.3%, 4.1%);
   --radius: 0.5rem;
-  --game-red: hsl(0, 73%, 59%);
-  --game-orange: hsl(21, 90%, 52%);
+  --game-black: hsl(0, 0%, 5%);
+  --game-white: hsl(0, 0%, 95%);
   --game-gray: hsl(215, 25%, 27%);
 }
 
@@ -49,8 +49,8 @@
   --destructive-foreground: hsl(0, 0%, 98%);
   --ring: hsl(240, 4.9%, 83.9%);
   --radius: 0.5rem;
-  --game-red: hsl(0, 73%, 59%);
-  --game-orange: hsl(21, 90%, 52%);
+  --game-black: hsl(0, 0%, 5%);
+  --game-white: hsl(0, 0%, 95%);
   --game-gray: hsl(215, 25%, 27%);
 }
 
@@ -65,12 +65,13 @@
 }
 
 @layer utilities {
-  .game-red {
-    background-color: var(--game-red);
+  .game-black {
+    background-color: var(--game-black);
   }
   
-  .game-orange {
-    background-color: var(--game-orange);
+  .game-white {
+    background-color: var(--game-white);
+    border: 1px solid var(--game-black);
   }
   
   .game-gray {
