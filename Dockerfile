@@ -17,7 +17,7 @@ COPY . .
 RUN npm run build
 
 # Expose port
-EXPOSE 5000
+EXPOSE 80
 
 # Create cache directory (for applikasjonen å skrive til)
 RUN mkdir -p ./cache

@@ -48,7 +48,7 @@ docker build -t tic-tac-toe .
 
 ### Kjør container
 ```bash
-docker run -p 5000:5000 tic-tac-toe
+docker run -p 80:80 tic-tac-toe
 ```
 
 ## Kubernetes Deployment
