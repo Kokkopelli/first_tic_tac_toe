@@ -1,0 +1,120 @@
+Fra kode til Kubernetes¶
+Denne veiledningen vil ta deg gjennom alle stegene fra du oppretter et github repo til du har koden kjørende i kubernetes. Dypdykk i ting som er godt dokumentert på internett, for eksempel det å skrive kubernetes manifester, holdes utenfor.
+
+introduksjon
+Generelt overblikk.
+1. Lag et github repo, og skriv koden din¶
+Gå inn på Github og lag deg et repository.
+
+Når du skal skrive koden har vi ingen spesifikke retningslinjer, men det er noen ting du kan gjøre som vil gjøre prosessen enklere når koden skal deployes.
+
+Hvordan håndtere konfigurasjon/secrets?¶
+Vi anbefaler at du skriver koden slik at den leser secrets fra en JSON-fil. Hvor på maskinen denne filen ligger, burde være definert i en miljøvariabel. Dette er for enkel integrasjon med Vault i seinere steg. Her kommer et kort eksempel med et python program som leser en JSON-fil med en api-key.
+
+.envrc
+
+export CONFIG_FILE_PATH=/tmp/secrets.json
+/tmp/secrets.json
+
+{
+  "api_user": "myApiUser",
+  "api_pass": "myApiKey",
+  "api_url": "https://myapi.url"
+}
+myprogram.py
+
+config = {}
+config_file_path = os.getenv("CONFIG_PATH")
+
+with open(config_path) as config_file:
+  config =  json.load(config_file)
+
+r = requests.get(config["api_url"], auth=(config["api_user"], config["api_url"])
+...
+Kjør følgende i terminal for å starte programmet lokalt:
+
+
+source .envrc
+python3 myprogram.py
+2. Lag en Dockerfile for å bygge container image¶
+Dockerfile er det som lar oss automatisk bygge applikasjonen din til et container image, og er første steget du må gjøre for å få deployet koden til kubernetes. Lag en fil kalt 'Dockerfile' og legg den på rotnivå i github-repoet ditt. Bruk guider til å skrive en Dockerfile for ditt programmeringsspråk (begynnerguide til dockerfiles, best-practices. De fleste språk og rammeverk har gode eksempler på dockerfiles, et google søk burde avdekke mye.
+
+For å teste dockerfilen din lokalt, kan du kjøre:
+
+
+docker build . -t "test"
+docker run test
+Bruk et eget workdir i dockerfilen, prøv å unngå at applikasjonen skriver til root-filesystem¶
+For å sikre at applikasjonen ikke skriver til root-filsystemet, bør du angi en egen arbeidsmappe (WORKDIR) i Dockerfilen. Dette gjør at alle operasjoner utføres innenfor angitte WORKDIR, og bidrar til å unngå uønskede skriveoperasjoner til root. Her er et eksempel på en Dockerfil:
+
+Dockerfile
+
+FROM python:3.12-slim
+WORKDIR /app
+COPY app.py /app
+CMD ["python", "app.py"]
+Få applikasjonen til å skrive til en egen mappe (feks ./cache/).
+
+3. Deploy applikasjonen din ved å trykke på knapper i Gorgon¶
+Gorgon vil automatisk ta deg gjennom stegene vi nå skal forklare. Det er anbefalt å bruke den for å få et godt utgangspunkt du kan bygge videre på.
+
+Forklaring på det Gorgon gjør¶
+Gorgon oppretter namespace i kubernetes, og skriver yaml-filer som sendes som pull request til ditt repo, og til Vault repoet. I hovedsak består det avfølgende:
+
+1. Tilgang for github-repoet til kubernetes, og kubernetes-applikasjonen til Vault¶
+Det må gies tilgang for github-repoet ditt til kubernetes slik at vi får lov til å deploye dit ved hjelp av GitHub Actions.
+Disse tilgangene gies gjennom Vault.
+
+I vault er alle definisjoner i yaml, les mer her.
+Definisjonene for å sette opp tilgang for et github-repo til vault, github-repo til kubernetes og kubernetes-applikasjon til vault ser slik ut:
+
+
+---
+github_applications:
+  EKSEMPELNAVN-github:
+    prod:
+      github_subject: 'repo:nrkno/EKSEMPELNAVN:ref:refs/heads/main'
+      application_secrets:
+        access: read-only
+      vault_application_shared_secret_paths:
+        - access: read-only
+          path: kubernetes-config/aks-plattform-int-prod-eno
+      kubernetes_roles:
+        - role_name: edit
+          allowed_namespaces:
+            - EKSEMPELNAVN
+          kubernetes_clusters:
+            - aks-plattform-int-prod-eno
+kubernetes_applications:
+  EKSEMPELNAVN-kubernetes:
+    prod:
+      application_secrets:
+        access: read-only
+      kubernetes_clusters:
+        - cluster_name: aks-plattform-int-prod-eno
+          namespace_prefix: EKSEMPELNAVN
+          service_account_name: EKSEMPELNAVN
+          namespace_use_suffix: false
+Det gies også tilgang for en AD-gruppe til kubernetes applikasjonen i Vault:
+
+
+---
+azure_ad_groups:
+  "DIN-AD-GRUPPE":
+    object_id: din-ad-gruppeid
+    applications:
+      - name: EKSEMPELNAVN-kubernetes
+        access: read-write
+        environments:
+          - prod
+2. Kubernetes-manifester som beskriver hvordan applikasjonen skal kjøre¶
+Gorgon vil opprette kubernetes-manifester for en typisk web-applikasjon. Manifester kan være hva som helst av kubernetes-manifester, som kan applyes med edit-tilgang på namespacet. Disse legges typisk i manifests/. En introduksjon til kubernetes-manifester kan sees i kubernetes-kurset.
+
+3. En github workflow som bygger container image og deployer til kubernetes¶
+Gorgon vil også opprette en Github Workflow som bygger container image, deployer det til container registry, og oppdaterer imaget med tilhørende kubernetes-manifester i kubernetes.
+
+4. Fortsett å oppdatere koden din¶
+Når du nå pusher kode til main i github-repoet ditt vil det kjøre en github-action som bygger og deployer til kubernetes. Nå er det bare å endre og tilpasse kubernetes-manifestene i manifests/.
+Du kan også lage flere github workflows ved å lage yaml filer i .github/workflows/, eller endre på de som er der.
+Hvis du trenger flere tilganger eller annet kan du lage pull requests til Vault.
+Les logger eller se på metrics for applikasjonen din i Grafana.
