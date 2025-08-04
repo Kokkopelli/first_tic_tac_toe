@@ -20,6 +20,11 @@ if (fs.existsSync(configFilePath)) {
   log(`Config file not found at ${configFilePath}, using environment variables`);
 }
 
+// Fallback to environment variables for any missing config
+config.database_url = config.database_url || process.env.DATABASE_URL || "memory://localhost";
+config.session_secret = config.session_secret || process.env.SESSION_SECRET || "dev-secret";
+config.app_port = config.app_port || process.env.PORT || "80";
+
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
